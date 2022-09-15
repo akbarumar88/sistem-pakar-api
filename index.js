@@ -340,7 +340,16 @@ app.get("/diagnosa", async (req, res, next) => {
     let offset = (page - 1) * perpage
 
     let sql = `SELECT * FROM penyakit WHERE TRUE ${filterCari} OFFSET ${offset} LIMIT ${perpage}`
-    let resGejala = await db.query(sql)
+    let resPenyakit = await db.query(sql)
+
+    // Dapatkan gejala dari masing-masing penyakit
+    for (let i = 0; i < resPenyakit.length; i++) {
+      const el = resPenyakit[i]
+      let resGejala = await db.query(
+        `SELECT idgejala,bobot FROM diagnosa WHERE idpenyakit=${el.id}`
+      )
+      resPenyakit[i]["gejala"] = resGejala
+    }
 
     let queryCount = `SELECT COUNT(id) as jml FROM penyakit WHERE TRUE ${filterCari}`
     let additional = await db.query(queryCount)
@@ -348,7 +357,7 @@ app.get("/diagnosa", async (req, res, next) => {
     let pageCount = Math.ceil(dataCount / perpage)
     res.json({
       message: "Berhasil",
-      data: resGejala,
+      data: resPenyakit,
       pageCount,
       dataCount,
     })
