@@ -225,3 +225,107 @@ app.get("/penyakit", async (req, res, next) => {
     })
   }
 })
+
+app.post("/penyakit", async (req, res, next) => {
+  const { kode, deskripsi } = req.body
+  try {
+    if (empty(kode)) {
+      throw new Error("Kode Penyakit harus diisi.")
+    }
+
+    if (empty(deskripsi)) {
+      throw new Error("Deskripsi Penyakit harus diisi.")
+    }
+
+    // Validasi Kode Penyakit
+    let resPenyakit = await db.oneOrNone(
+      `SELECT id FROM penyakit where kode='${kode}'`
+    )
+    if (!empty(resPenyakit)) {
+      // console.log(resPenyakit)
+      throw new Error(
+        "Kode Penyakit sudah dipakai, harap gunakan kode yang lain."
+      )
+    }
+    await db.query(
+      `INSERT INTO penyakit(kode,deskripsi) VALUES('${kode}', '${deskripsi}')`
+    )
+
+    res.json({
+      message: "Berhasil",
+    })
+  } catch (e) {
+    res.status(500)
+    res.json({
+      data: [],
+      pageCount: 0,
+      dataCount: 0,
+      errorMessage: e.message,
+      error: e,
+    })
+  }
+})
+
+app.put("/penyakit/:id", async (req, res, next) => {
+  const { id } = req.params
+  const { kode, deskripsi } = req.body
+  // console.log(id)
+  try {
+    if (empty(kode)) {
+      throw new Error("Kode Penyakit harus diisi.")
+    }
+
+    if (empty(deskripsi)) {
+      throw new Error("Deskripsi Penyakit harus diisi.")
+    }
+
+    // Validasi Kode Penyakit
+    let resPenyakit = await db.oneOrNone(
+      `SELECT id FROM penyakit where kode='${kode}' AND id != ${id}`
+    )
+    // console.log(resPenyakit)
+    if (!empty(resPenyakit)) {
+      // console.log(resPenyakit)
+      throw new Error(
+        "Kode Penyakit sudah dipakai, harap gunakan kode yang lain."
+      )
+    }
+    await db.query(
+      `UPDATE penyakit SET kode='${kode}',deskripsi='${deskripsi}' WHERE id=${id}`
+    )
+
+    res.json({
+      message: "Berhasil",
+    })
+  } catch (e) {
+    res.status(500)
+    res.json({
+      data: [],
+      pageCount: 0,
+      dataCount: 0,
+      errorMessage: e.message,
+      error: e,
+    })
+  }
+})
+
+app.delete("/penyakit/:id", async (req, res, next) => {
+  const { id } = req.params
+  // console.log(id)
+  try {
+    await db.query(`DELETE FROM penyakit WHERE id=${id}`)
+
+    res.json({
+      message: "Berhasil",
+    })
+  } catch (e) {
+    res.status(500)
+    res.json({
+      data: [],
+      pageCount: 0,
+      dataCount: 0,
+      errorMessage: e.message,
+      error: e,
+    })
+  }
+})
