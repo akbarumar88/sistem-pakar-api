@@ -372,3 +372,49 @@ app.get("/diagnosa", async (req, res, next) => {
     })
   }
 })
+
+app.post("/cek-diagnosa", async (req, res, next) => {
+  const { gejala: inputGejala } = req.body
+  try {
+    if (empty(inputGejala)) {
+      throw new Error("Daftar gejala harus diisi.")
+    }
+    if (typeof inputGejala !== "object") {
+      throw new Error("Field gejala harus berupa array of int.")
+    }
+
+    let resPenyakit = await db.query(`SELECT * FROM penyakit`)
+    for (let i = 0; i < resPenyakit.length; i++) {
+      const el = resPenyakit[i]
+      let resGejala = await db.query(
+        `SELECT idgejala,bobot FROM diagnosa WHERE idpenyakit=${el.id}`
+      )
+      // resPenyakit[i]["gejala"] = resGejala
+
+      let similarity = 0
+      for (let j = 0; j < resGejala.length; j++) {
+        for (let k = 0; k < inputGejala.length; k++) {
+          const inGej = inputGejala[k]
+          const gej = resGejala[j]
+          if (inGej == gej.idgejala) similarity += parseFloat(gej.bobot)
+        }
+      }
+
+      resPenyakit[i]["similarity"] = similarity
+    }
+
+    res.json({
+      message: "Berhasil",
+      data: resPenyakit,
+    })
+  } catch (e) {
+    res.status(500)
+    res.json({
+      data: [],
+      pageCount: 0,
+      dataCount: 0,
+      errorMessage: e.message,
+      error: e,
+    })
+  }
+})
