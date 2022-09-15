@@ -329,3 +329,37 @@ app.delete("/penyakit/:id", async (req, res, next) => {
     })
   }
 })
+
+app.get("/diagnosa", async (req, res, next) => {
+  const { page = 1, perpage = 10, cari } = req.query
+  try {
+    let filterCari = !empty(cari)
+      ? `AND kode LIKE '%${cari}%' OR deskripsi LIKE '%${cari}%'`
+      : ""
+    // console.log({page,perpage})
+    let offset = (page - 1) * perpage
+
+    let sql = `SELECT * FROM penyakit WHERE TRUE ${filterCari} OFFSET ${offset} LIMIT ${perpage}`
+    let resGejala = await db.query(sql)
+
+    let queryCount = `SELECT COUNT(id) as jml FROM penyakit WHERE TRUE ${filterCari}`
+    let additional = await db.query(queryCount)
+    let dataCount = additional[0].jml
+    let pageCount = Math.ceil(dataCount / perpage)
+    res.json({
+      message: "Berhasil",
+      data: resGejala,
+      pageCount,
+      dataCount,
+    })
+  } catch (e) {
+    res.status(500)
+    res.json({
+      data: [],
+      pageCount: 0,
+      dataCount: 0,
+      errorMessage: e.message,
+      error: e,
+    })
+  }
+})
